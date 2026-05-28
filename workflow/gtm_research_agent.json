@@ -1,0 +1,245 @@
+{
+  "name": "gtm_research_agent",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.1-8b-instant\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a GTM researcher. You must respond with ONLY a raw JSON object. No markdown. No newlines inside string values. No backticks. No explanation. Pure JSON only starting with { and ending with }.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Research {{ $json.company }} and respond with exactly 6 fields: company_name, what, who, pain_point, trigger_event, outreach_angle. trigger_event = one specific recent signal (funding round, new hire, product launch, expansion news) that makes NOW the right time to reach out. outreach_angle = one bold sentence referencing the trigger_event AND pain_point. Do NOT start with I noticed. Do NOT use are you tired. Start with an insight or a direct statement. JSON only.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        -144
+      ],
+      "id": "f7196468-c112-4abf-904b-9faca8a40e5d",
+      "name": "HTTP Request",
+      "executeOnce": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7lenunfbARyKifP0",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FiWJZF2R1YYaoZI1dG0xsmb2dcnaYJ6QHxkqvm-rNA4",
+          "mode": "list",
+          "cachedResultName": "GTM -Ex 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FiWJZF2R1YYaoZI1dG0xsmb2dcnaYJ6QHxkqvm-rNA4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FiWJZF2R1YYaoZI1dG0xsmb2dcnaYJ6QHxkqvm-rNA4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "company": "={{ $json.company }}",
+            "what": "={{ $json.what }}",
+            "who": "={{ $json.who }}",
+            "pain-point": "={{ $json.pain_point }}",
+            "outreach_angle": "={{ $json.outreach_angle }}",
+            "trigger_event": "={{ $json.trigger_event }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "what",
+              "displayName": "what",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "who",
+              "displayName": "who",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "pain-point",
+              "displayName": "pain-point",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "outreach_angle",
+              "displayName": "outreach_angle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "trigger_event",
+              "displayName": "trigger_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        400,
+        -144
+      ],
+      "id": "ee3b93de-503a-4444-8292-97d79507358f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ty7Zys2ZkYXFuFv9",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const content = $input.item.json.choices[0].message.content;\ntry {\n  const cleaned = content\n    .replace(/```json/g, '')\n    .replace(/```/g, '')\n    .replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, ' ')\n    .trim();\n  \n  const parsed = JSON.parse(cleaned);\n  \n  return {\n    json: {\n      company: parsed.company_name || \"Unknown\",\n      what: parsed.what || \"\",\n      who: parsed.who || \"\",\n      pain_point: parsed.pain_point || \"\",\n      trigger_event: parsed.trigger_event || \"\",\n      outreach_angle: parsed.outreach_angle || \"\"\n    }\n  };\n} catch(e) {\n  return {\n    json: {\n      company: \"Parse Error\",\n      what: content,\n      who: \"\",\n      pain_point: \"\",\n      trigger_event: \"\",\n      outreach_angle: \"\"\n    }\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -144
+      ],
+      "id": "0a4e95cf-d97b-4338-8e53-a1fde10951e0",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const company = $input.first().json.body.company_name;\n\nreturn [\n  { json: { company: company } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        -144
+      ],
+      "id": "214f7d8d-28be-493b-92b8-3cc84dd38df1",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "=gtm-research",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -144
+      ],
+      "id": "fd4303f6-058f-4c72-b33f-935a29119264",
+      "name": "Webhook",
+      "webhookId": "48e89b5d-a6d2-4824-a6ee-4bee917cc9f0"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3b036a1b-7da1-4cad-9b32-d2567d039cb8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "37f1b606ee2109b1e79c5daf6899f65ca2347a6547b684507525d569efc7755e"
+  },
+  "id": "D5DPR1MUrp7WAL9S",
+  "tags": []
+}
