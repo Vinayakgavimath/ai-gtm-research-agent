@@ -110,5 +110,3 @@ ai-gtm-research-agent/
 ## Built By
 
 **Vinayak Gavimath** · May 2026  
-BCA First Year · Manipal University Jaipur  
-[LinkedIn](https://linkedin.com/in/vinayak-g-) · [Portfolio](https://vinayakgavimath.github.io/vinayak-g)
